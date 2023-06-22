@@ -2,10 +2,13 @@ package controllers
 
 import (
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/fmaulll/lectureon/initializers"
 	"github.com/fmaulll/lectureon/models"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -54,5 +57,43 @@ func Login(ctx *gin.Context) {
 
 		return
 	}
+
+	var user *models.User
+	initializers.DB.First(&user, "username = ?", body.Username)
+
+	if user.ID == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid email or password"})
+
+		return
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid email or password"})
+
+		return
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to create token"})
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message":  "Login successfully",
+		"token":    tokenString,
+		"id":       user.ID,
+		"email":    user.Email,
+		"username": user.Username,
+	})
 
 }
