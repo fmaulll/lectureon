@@ -23,6 +23,7 @@ func main() {
 	})
 
 	router.POST("/api/signup", controllers.Signup)
+	router.POST("/api/login", controllers.Login)
 
 	router.Run(":" + os.Getenv("PORT"))
 }
