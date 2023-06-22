@@ -75,9 +75,24 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": user.ID,
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("SECRET")))
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to create token"})
+
+		return
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":      user.ID,
+		"id":       user.ID,
+		"email":    user.Email,
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Minute * 15).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
@@ -89,11 +104,9 @@ func Login(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"message":  "Login successfully",
-		"token":    tokenString,
-		"id":       user.ID,
-		"email":    user.Email,
-		"username": user.Username,
+		"message":       "Login successfully",
+		"access_token":  tokenString,
+		"refresh_token": refreshTokenString,
 	})
 
 }
