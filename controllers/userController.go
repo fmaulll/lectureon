@@ -2,13 +2,10 @@ package controllers
 
 import (
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/fmaulll/lectureon/initializers"
 	"github.com/fmaulll/lectureon/models"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -75,38 +72,18 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("SECRET")))
+	tokens, err := GenerateToken(user.ID)
 
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to create token"})
-
-		return
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":      user.ID,
-		"id":       user.ID,
-		"email":    user.Email,
-		"username": user.Username,
-		"exp":      time.Now().Add(time.Minute * 15).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
-
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to create token"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid email or password"})
 
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message":       "Login successfully",
-		"access_token":  tokenString,
-		"refresh_token": refreshTokenString,
+		"access_token":  tokens["access_token"],
+		"refresh_token": tokens["refresh_token"],
 	})
 
 }
