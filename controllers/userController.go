@@ -13,6 +13,7 @@ func Signup(ctx *gin.Context) {
 	var body struct {
 		Email    string
 		Username string
+		Role     string
 		Password string
 	}
 
@@ -30,7 +31,7 @@ func Signup(ctx *gin.Context) {
 		return
 	}
 
-	user := models.User{Email: body.Email, Username: body.Username, Password: string(hash)}
+	user := models.User{Email: body.Email, Username: body.Username, Role: body.Role, Password: string(hash)}
 
 	result := initializers.DB.Create(&user)
 
