@@ -13,7 +13,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-func getTokenFromRequest(context *gin.Context) string {
+func GetTokenFromRequest(context *gin.Context) string {
 	bearerToken := context.Request.Header.Get("Authorization")
 	splitToken := strings.Split(bearerToken, " ")
 	if len(splitToken) == 2 {
@@ -22,9 +22,9 @@ func getTokenFromRequest(context *gin.Context) string {
 	return ""
 }
 
-func RequireAuth(context *gin.Context) {
+func RequireAuth(ctx *gin.Context) {
 
-	tokenString := getTokenFromRequest(context)
+	tokenString := GetTokenFromRequest(ctx)
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
@@ -37,13 +37,13 @@ func RequireAuth(context *gin.Context) {
 	})
 
 	if err != nil {
-		context.AbortWithStatus(http.StatusUnauthorized)
+		ctx.AbortWithStatus(http.StatusUnauthorized)
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
-			context.AbortWithStatus(http.StatusUnauthorized)
+			ctx.AbortWithStatus(http.StatusUnauthorized)
 		}
 
 		var user models.User
@@ -51,13 +51,13 @@ func RequireAuth(context *gin.Context) {
 		initializers.DB.First(&user, claims["sub"])
 
 		if user.ID == 0 {
-			context.AbortWithStatus(http.StatusUnauthorized)
+			ctx.AbortWithStatus(http.StatusUnauthorized)
 		}
 
-		context.Set("user", user)
+		ctx.Set("user", user)
 
-		context.Next()
+		ctx.Next()
 	} else {
-		context.AbortWithStatus(http.StatusUnauthorized)
+		ctx.AbortWithStatus(http.StatusUnauthorized)
 	}
 }

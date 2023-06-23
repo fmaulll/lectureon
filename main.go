@@ -31,6 +31,8 @@ func main() {
 		ctx.JSON(http.StatusOK, gin.H{"message": "WOW"})
 	})
 
+	router.POST("/api/token", controllers.Token)
+
 	router.POST("/api/signup", controllers.Signup)
 	router.POST("/api/login", controllers.Login)
 
