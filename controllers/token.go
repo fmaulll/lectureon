@@ -29,6 +29,7 @@ func GenerateToken(id uint) (map[string]string, error) {
 		"id":       user.ID,
 		"email":    user.Email,
 		"username": user.Username,
+		"role":     user.Role,
 		"exp":      time.Now().Add(time.Minute * 15).Unix(),
 	})
 
