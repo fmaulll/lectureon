@@ -6,8 +6,10 @@ import (
 
 type User struct {
 	gorm.Model
-	Email    string `gorm:"unique" json:"email"`
-	Username string `json:"username"`
-	Password string
-	Role     string `json:"role"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `gorm:"unique" json:"email"`
+	Username  string `json:"username"`
+	Password  string
+	Role      string `json:"role"`
 }
