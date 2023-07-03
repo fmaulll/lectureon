@@ -28,11 +28,13 @@ func GenerateToken(id uint) (map[string]string, error) {
 		return nil, err
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":      user.ID,
-		"email":    user.Email,
-		"username": user.Username,
-		"role":     user.Role,
-		"exp":      time.Now().Add(time.Minute * 15).Unix(),
+		"sub":       user.ID,
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
+		"email":     user.Email,
+		"username":  user.Username,
+		"role":      user.Role,
+		"exp":       time.Now().Add(time.Minute * 15).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
