@@ -97,7 +97,7 @@ func Token(ctx *gin.Context) {
 		tokens, err := GenerateToken(user.ID)
 
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid email or password"})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"message": "create token failed!"})
 
 			return
 		}
