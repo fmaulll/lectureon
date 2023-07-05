@@ -37,7 +37,9 @@ func main() {
 
 	router.POST("/api/signup", controllers.Signup)
 	router.POST("/api/login", controllers.Login)
+
 	router.POST("/api/post", controllers.NewPost)
+	router.GET("/api/post", controllers.GetAllPost)
 
 	router.Run(":" + os.Getenv("PORT"))
 }
