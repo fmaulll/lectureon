@@ -18,6 +18,8 @@ func init() {
 
 func main() {
 	router := gin.Default()
+	router.MaxMultipartMemory = 8 << 20 // 8 MiB
+	router.Static("/", "./images")
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
