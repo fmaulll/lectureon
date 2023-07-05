@@ -1,7 +1,7 @@
 package main
 
 import (
-	"net/http"
+	"fmt"
 	"os"
 
 	"github.com/fmaulll/lectureon/controllers"
@@ -19,7 +19,7 @@ func init() {
 func main() {
 	router := gin.Default()
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB
-	router.Static("/", "./images")
+	router.Static("/images", "./images")
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -30,13 +30,14 @@ func main() {
 	}))
 
 	router.GET("/api/", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{"message": "WOW"})
+		fmt.Println("The URL: ", ctx.Request.Host)
 	})
 
 	router.POST("/api/token", controllers.Token)
 
 	router.POST("/api/signup", controllers.Signup)
 	router.POST("/api/login", controllers.Login)
+	router.POST("/api/post", controllers.NewPost)
 
 	router.Run(":" + os.Getenv("PORT"))
 }
