@@ -1,14 +1,17 @@
 package models
 
 import (
-	"gorm.io/gorm"
+	"time"
 )
 
 type Post struct {
-	gorm.Model
-	Title       string
-	SubTitle    string `json:"subTitle"`
-	Description string
-	Image       string
-	VideoUrl    string `json:"videoUrl"`
+	ID          int64     `json:"id"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	Title       string    `json:"title"`
+	SubTitle    string    `json:"subTitle"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	VideoUrl    string    `json:"videoUrl"`
+	AuthorID    int64     `json:"authorId"`
 }
