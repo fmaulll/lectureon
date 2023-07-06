@@ -41,8 +41,12 @@ func NewPost(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "upload file err: %s", err.Error())
 		return
 	}
+	scheme := "http"
+	if ctx.Request.TLS != nil {
+		scheme = "https"
+	}
 
-	post := models.Post{Title: title, SubTitle: subTitle, Description: description, Image: ctx.Request.Host + "/images/" + filename, VideoUrl: videoUrl, AuthorID: id, CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	post := models.Post{Title: title, SubTitle: subTitle, Description: description, Image: scheme + "://" + ctx.Request.Host + "/images/" + filename, VideoUrl: videoUrl, AuthorID: id, CreatedAt: time.Now(), UpdatedAt: time.Now()}
 
 	result := initializers.DB.Create(&post)
 
@@ -57,47 +61,22 @@ func NewPost(ctx *gin.Context) {
 
 func GetAllPost(ctx *gin.Context) {
 
-	// type dataResult struct {
-	// 	ID          int64  `json:"id"`
-	// 	Title       string `json:"title"`
-	// 	SubTitle    string `json:"subTitle"`
-	// 	Description string `json:"description"`
-	// 	Image       string `json:"image"`
-	// 	VideoUrl    string `json:"videoUrl"`
-	// 	AuthorID    int64  `json:"authorId"`
-	// 	AuthorName  string `json:"authorName"`
-	// }
+	var result []struct {
+		ID          int64  `json:"id"`
+		AuthorID    int64  `json:"authorId"`
+		AuthorName  string `json:"authorName"`
+		Title       string `json:"title"`
+		SubTitle    string `json:"subTitle"`
+		Description string `json:"description"`
+		Image       string `json:"image"`
+		VideoUrl    string `json:"videoUrl"`
+	}
 
-	// var postResult []dataResult
-
-	var posts []models.Post
-	result := initializers.DB.Find(&posts)
-
-	if result.Error != nil {
+	if err := initializers.DB.Table("users").Select("posts.id, users.id as author_id, users.first_name || ' ' || users.last_name as author_name, posts.title, posts.sub_title, posts.description, posts.image, posts.video_url").Joins("JOIN posts ON users.id = posts.author_id").Scan(&result); err.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"message": "post not found!"})
 
 		return
 	}
 
-	// for i := range posts {
-	// 	var author *models.User
-
-	// 	if result := initializers.DB.First(&author, "id = ?", posts[i].AuthorID); result.Error != nil {
-	// 		ctx.JSON(http.StatusNotFound, gin.H{"message": "post not found!"})
-
-	// 		return
-	// 	}
-
-	// 	postResult[i].ID = posts[i].ID
-	// 	postResult[i].AuthorID = posts[i].AuthorID
-	// 	postResult[i].AuthorName = author.FirstName + author.LastName
-	// 	postResult[i].Title = posts[i].Title
-	// 	postResult[i].SubTitle = posts[i].SubTitle
-	// 	postResult[i].Description = posts[i].Description
-	// 	postResult[i].Image = posts[i].Image
-	// 	postResult[i].VideoUrl = posts[i].VideoUrl
-	// }
-
-	ctx.JSON(http.StatusOK, gin.H{"results": posts})
-	// ctx.JSON(http.StatusOK, gin.H{"results": postResult})
+	ctx.JSON(http.StatusOK, result)
 }
