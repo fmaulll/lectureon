@@ -40,6 +40,7 @@ func main() {
 
 	router.POST("/api/post", controllers.NewPost)
 	router.GET("/api/post", controllers.GetAllPost)
+	router.GET("/api/post/:id", controllers.GetAllPostByAuthorId)
 
 	router.Run(":" + os.Getenv("PORT"))
 }

@@ -80,3 +80,17 @@ func GetAllPost(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, result)
 }
+
+func GetAllPostByAuthorId(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	var posts []models.Post
+
+	if err := initializers.DB.Where("author_id = ?", id).Find(&posts); err.Error != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "post not found!"})
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, posts)
+}
