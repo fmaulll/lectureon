@@ -11,7 +11,5 @@ type Post struct {
 	Title       string    `json:"title"`
 	SubTitle    string    `json:"subTitle"`
 	Description string    `json:"description"`
-	Image       string    `json:"image"`
-	VideoUrl    string    `json:"videoUrl"`
 	AuthorID    int64     `json:"authorId"`
 }
