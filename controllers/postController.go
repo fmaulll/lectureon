@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -16,7 +17,12 @@ func NewPost(ctx *gin.Context) {
 	title := ctx.PostForm("title")
 	subTitle := ctx.PostForm("subTitle")
 	description := ctx.PostForm("description")
-	videoUrl := ctx.PostForm("videoUrl")
+	// videoUrl := ctx.PostForm("videoUrl")
+
+	scheme := "http"
+	if ctx.Request.TLS != nil {
+		scheme = "https"
+	}
 
 	id, err := strconv.ParseInt(authorId, 10, 64)
 	if err != nil {
@@ -24,29 +30,7 @@ func NewPost(ctx *gin.Context) {
 		return
 	}
 
-	// Source
-	file, err := ctx.FormFile("image")
-	if err != nil {
-		ctx.String(http.StatusBadRequest, "get form err: %s", err.Error())
-		return
-	}
-
-	t := time.Now().Unix()
-
-	stringTime := strconv.Itoa(int(t))
-
-	filename := stringTime + filepath.Base(file.Filename)
-	dst := "./images/" + filename
-	if err := ctx.SaveUploadedFile(file, dst); err != nil {
-		ctx.String(http.StatusBadRequest, "upload file err: %s", err.Error())
-		return
-	}
-	scheme := "http"
-	if ctx.Request.TLS != nil {
-		scheme = "https"
-	}
-
-	post := models.Post{Title: title, SubTitle: subTitle, Description: description, Image: scheme + "://" + ctx.Request.Host + "/images/" + filename, VideoUrl: videoUrl, AuthorID: id, CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	post := models.Post{Title: title, SubTitle: subTitle, Description: description, AuthorID: id, CreatedAt: time.Now(), UpdatedAt: time.Now()}
 
 	result := initializers.DB.Create(&post)
 
@@ -56,29 +40,61 @@ func NewPost(ctx *gin.Context) {
 		return
 	}
 
+	// Source
+	form, err := ctx.MultipartForm()
+	if err != nil {
+		ctx.String(http.StatusBadRequest, "get form err: %s", err.Error())
+		return
+	}
+	files := form.File["images"]
+
+	t := time.Now().Unix()
+
+	stringTime := strconv.Itoa(int(t))
+
+	for _, file := range files {
+		filename := stringTime + filepath.Base(file.Filename)
+		dst := "./images/" + filename
+
+		if err := ctx.SaveUploadedFile(file, dst); err != nil {
+			ctx.String(http.StatusBadRequest, "upload file err: %s", err.Error())
+			return
+		}
+
+		image := models.Image{CreatedAt: time.Now(), UpdatedAt: time.Now(), Title: file.Filename, Url: scheme + "://" + ctx.Request.Host + "/images/" + filename, PostId: post.ID}
+
+		if err := initializers.DB.Create(&image); err.Error != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to upload image"})
+
+			return
+		}
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{"message": "post created!"})
 }
 
 func GetAllPost(ctx *gin.Context) {
 
-	var result []struct {
+	type Post struct {
 		ID          int64  `json:"id"`
 		AuthorID    int64  `json:"authorId"`
 		AuthorName  string `json:"authorName"`
 		Title       string `json:"title"`
 		SubTitle    string `json:"subTitle"`
 		Description string `json:"description"`
-		Image       string `json:"image"`
-		VideoUrl    string `json:"videoUrl"`
+		Images      string `json:"images"`
+		// VideoUrl    string `json:"videoUrl"`
 	}
 
-	if err := initializers.DB.Table("users").Select("posts.id, users.id as author_id, users.first_name || ' ' || users.last_name as author_name, posts.title, posts.sub_title, posts.description, posts.image, posts.video_url").Joins("JOIN posts ON users.id = posts.author_id").Scan(&result); err.Error != nil {
+	var results []Post
+
+	if err := initializers.DB.Table("users").Select("posts.id, users.id as author_id, users.first_name || ' ' || users.last_name as author_name, posts.title, posts.sub_title, posts.description, json_agg(images.url) as images").Joins("JOIN posts ON users.id = posts.author_id").Joins("LEFT JOIN images ON posts.id = images.post_id").Group("users.id, posts.id, images.post_id").Scan(&results); err.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"message": "post not found!"})
 
 		return
 	}
 
-	ctx.JSON(http.StatusOK, result)
+	ctx.JSON(http.StatusOK, results)
 }
 
 func GetAllPostByAuthorId(ctx *gin.Context) {
@@ -93,4 +109,32 @@ func GetAllPostByAuthorId(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, posts)
+}
+
+func EditPost(ctx *gin.Context) {
+	var body struct {
+		ID          int64  `json:"id"`
+		Title       string `json:"title"`
+		SubTitle    string `json:"subTitle"`
+		Description string `json:"description"`
+		Image       string `json:"image"`
+		VideoUrl    string `json:"videoUrl"`
+	}
+
+	if ctx.Bind(&body) != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to read body"})
+
+		return
+	}
+
+	result := initializers.DB.Model(&models.Post{}).Find(&models.Post{}, body.ID).Select("title", "sub_title", "description", "image", "video_url", "updated_at").Updates(map[string]interface{}{"title": body.Title, "sub_title": body.SubTitle, "description": body.Description, "image": body.Image, "video_url": body.VideoUrl, "updated_at": time.Now()})
+
+	if result.Error != nil {
+		fmt.Println(result.Error)
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to update post!"})
+
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{"message": "successfully update post!"})
 }
