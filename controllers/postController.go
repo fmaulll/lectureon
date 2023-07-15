@@ -70,7 +70,7 @@ func NewPost(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "post created!"})
+	ctx.JSON(http.StatusCreated, gin.H{"message": "post created!"})
 }
 
 func GetAllPost(ctx *gin.Context) {
