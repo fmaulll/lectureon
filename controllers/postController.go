@@ -40,21 +40,28 @@ func NewPost(ctx *gin.Context) {
 		return
 	}
 
-	// Source
-	form, err := ctx.MultipartForm()
-	if err != nil {
-		ctx.String(http.StatusBadRequest, "get form err: %s", err.Error())
-		return
-	}
-	files := form.File["images"]
+	for i := 1; ; i++ {
+		file, err := ctx.FormFile("image" + strconv.Itoa(i))
+		if err != nil {
+			// No more files with the current key, break the loop
+			break
+		}
 
-	t := time.Now().Unix()
+		t := time.Now().Unix()
+		stringTime := strconv.Itoa(int(t))
 
-	stringTime := strconv.Itoa(int(t))
-
-	for _, file := range files {
 		filename := stringTime + filepath.Base(file.Filename)
+
 		dst := "./images/" + filename
+
+		// Handle the uploaded file as needed
+		// For example, save it to disk or process it in some way
+		err = ctx.SaveUploadedFile(file, dst)
+		if err != nil {
+			// Handle the error
+			ctx.String(http.StatusInternalServerError, "Failed to upload file")
+			return
+		}
 
 		if err := ctx.SaveUploadedFile(file, dst); err != nil {
 			ctx.String(http.StatusBadRequest, "upload file err: %s", err.Error())
