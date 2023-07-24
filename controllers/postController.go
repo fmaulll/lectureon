@@ -95,7 +95,7 @@ func GetAllPost(ctx *gin.Context) {
 
 	var results []Post
 
-	if err := initializers.DB.Table("users").Select("posts.id, users.id as author_id, users.first_name || ' ' || users.last_name as author_name, posts.title, posts.sub_title, posts.description, json_agg(images.url) as images").Joins("JOIN posts ON users.id = posts.author_id").Joins("LEFT JOIN images ON posts.id = images.post_id").Group("users.id, posts.id, images.post_id").Scan(&results); err.Error != nil {
+	if err := initializers.DB.Table("users").Select("posts.id, users.id as author_id, users.first_name || ' ' || users.last_name as author_name, posts.title, posts.sub_title, posts.description, json_agg(images.url) as images").Joins("JOIN posts ON users.id = posts.author_id").Joins("LEFT JOIN images ON posts.id = images.post_id").Group("users.id, posts.id, images.post_id").Order("posts.created_at desc").Scan(&results); err.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"message": "post not found!"})
 
 		return
