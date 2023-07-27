@@ -6,6 +6,7 @@ import (
 
 	"github.com/fmaulll/lectureon/controllers"
 	"github.com/fmaulll/lectureon/initializers"
+	"github.com/fmaulll/lectureon/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -38,10 +39,10 @@ func main() {
 	router.POST("/api/signup", controllers.Signup)
 	router.POST("/api/login", controllers.Login)
 
-	router.POST("/api/post", controllers.NewPost)
-	router.GET("/api/post", controllers.GetAllPost)
-	router.GET("/api/post/:id", controllers.GetAllPostByAuthorId)
-	router.PATCH("/api/post", controllers.EditPost)
+	router.POST("/api/post", middleware.RequireAuth, controllers.NewPost)
+	router.GET("/api/post", middleware.RequireAuth, controllers.GetAllPost)
+	router.GET("/api/post/:id", middleware.RequireAuth, controllers.GetAllPostByAuthorId)
+	router.PATCH("/api/post", middleware.RequireAuth, controllers.EditPost)
 
 	router.Run(":" + os.Getenv("PORT"))
 }
